@@ -48,6 +48,8 @@ var http = require('http');
 var mongoose = require('mongoose');
 var Memcached = require('memcached');
 
+var Grid = require('gridfs-stream');
+
 /**
  * Variable for connecting to memcached and mongodb.
  */
@@ -72,9 +74,9 @@ var server = http.createServer(app);
  * Connect to mongodb using mongoose npm module.
  */
 
-mongoose.connect(dbURI);
+var conn = mongoose.createConnection(dbURI);
 
-mongoose.connection.on('connected', function () {  
+conn.on('connected', function () {  
   console.log('Mongoose default connection open to ' + dbURI);
 
   memcached = new Memcached();
@@ -91,13 +93,28 @@ mongoose.connection.on('connected', function () {
   server.on('listening', onListening);
 });
 
-mongoose.connection.on('error',function (err) {  
+conn.on('error',function (err) {  
   console.log('Mongoose default connection error: ' + err);
 }); 
 
-mongoose.connection.on('disconnected', function () {  
+conn.on('disconnected', function () {  
   console.log('Mongoose default connection disconnected'); 
 });
+
+var Grid = require('gridfs-stream');
+var fs = require('fs');
+Grid.mongo = mongoose.mongo;
+
+gfs = conn.on('open', function () {
+  var gfs = Grid(conn.db);
+  var writestream = gfs.createWriteStream({
+    filename: '/home/bunlong/workspace/expressjs_memcached_mongodb_restful_api_upload_multi_images/test.jpg'
+  });
+
+  console.log(writestream);
+
+  fs.createReadStream('/home/bunlong/workspace/expressjs_memcached_mongodb_restful_api_upload_multi_images/public/').pipe(writestream);
+})
 
 /**
  * =========================================================
